@@ -1,8 +1,6 @@
 from requests import get as GET
-from time import time as timenow
 from time import sleep as timewait
 from urllib import parse
-from pprint import pprint as pp
 from dotenv import dotenv_values
 from discord_webhook import DiscordWebhook
 from lang import createEmbed, getSize
@@ -47,20 +45,32 @@ class Client:
         response = GET(url)
         return response.json()
 
-    def getWhaleTrade(self) -> dict:
+    def getWhaleTrade(self, price: float) -> dict:
         if self.exchange == "FTX":
             trades = self.get_trades()["result"]
         elif self.exchange == "BINANCE":
             trades = self.get_trades()
         whaleTrades = []
         for trade in trades:
-            if getSize(trade, self.exchange) >= float(config["MINIMUM_SIZE"]):
+            if round((getSize(trade, self.exchange) * price), 2) >= float(
+                config["MINIMUM_SIZE"]
+            ):
                 whaleTrades.append(trade)
         return whaleTrades
 
     def cacheTrades(self, trades: dict) -> None:
         self.cacheTradesObj.append(trades)
         pass
+
+    def get_price(self) -> float:
+        if self.exchange == "FTX":
+            url = (self.baseUrl + self.basePath)[:-1]
+            response = GET(url)
+            return float(response.json()["result"]["price"])
+        elif self.exchange == "BINANCE":
+            url = self.baseUrl + self.basePath + "avgPrice"
+            response = GET(url, params={"symbol": self.pair})
+            return float(response.json()["price"])
 
 
 ftxBTCUSDT = Client("https://ftx.com/api", "BTCUSDT")
@@ -69,7 +79,8 @@ bnBTCUSDT = Client("https://api.binance.com/", "BTCUSDT")
 pairs = [ftxBTCUSD, ftxBTCUSDT, bnBTCUSDT]
 while True:
     for pair in pairs:
-        trades = pair.getWhaleTrade()
+        price = pair.get_price()
+        trades = pair.getWhaleTrade(price)
         for trade in trades:
             if trade not in pair.cacheTradesObj:
                 pair.cacheTrades(trade)
@@ -78,7 +89,7 @@ while True:
                     url=config["DISCORD_WEBHOOK"],
                     content="TRADE ALERT",
                 )
-                embed = createEmbed(trade, pair.exchange)
+                embed = createEmbed(trade, pair.exchange, price)
                 webhook.add_embed(embed)
                 response = webhook.execute()
-    timewait(0.5)
+    timewait(0.8)

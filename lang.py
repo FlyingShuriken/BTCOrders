@@ -33,19 +33,19 @@ cexSup = {
 # if side is sell, then the color is red
 
 
-def createEmbed(trade: dict, cex: str) -> DiscordEmbed:
+def createEmbed(trade: dict, cex: str, price: float) -> DiscordEmbed:
     if trade[cexSup[cex]["type"]] == "sell":
         color = 0x00FF00
     else:
         color = 0xFF0000
-    size = getSize(trade, cex)
-    if size >= float(FTH_MINIMUM_SIZE):
+    value = round((getSize(trade, cex) * price), 2)
+    if value >= float(FTH_MINIMUM_SIZE):
         title = "❗❗❗❗❗❗🔔🔔🔔HUGE WHALE TRADE❗❗❗❗❗❗🔔🔔🔔"
-    elif size >= float(TRD_MINIMUM_SIZE):
+    elif value >= float(TRD_MINIMUM_SIZE):
         title = "❗❗❗❗❗❗❗WHALE TRADE❗❗❗❗❗❗❗"
-    elif size >= float(SND_MINIMUM_SIZE):
+    elif value >= float(SND_MINIMUM_SIZE):
         title = "❗❗❗SMALL WHALE TRADE❗❗❗"
-    elif size >= float(MINIMUM_SIZE):
+    elif value >= float(MINIMUM_SIZE):
         title = "❗REGULAR TRADE❗"
     embed = DiscordEmbed(
         title=title,
@@ -76,8 +76,12 @@ def createEmbed(trade: dict, cex: str) -> DiscordEmbed:
         name=f"SIZE",
         value=f"``{trade[cexSup[cex]['size']]}``",
     )
+    embed.add_embed_field(
+        name=f"VALUE",
+        value=f"``{value}  USD``",
+    )
     return embed
 
 
-def getSize(trade: dict, cex: str) -> str:
+def getSize(trade: dict, cex: str) -> float:
     return float(trade[cexSup[cex]["size"]])
