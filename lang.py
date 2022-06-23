@@ -34,10 +34,17 @@ cexSup = {
 
 
 def createEmbed(trade: dict, cex: str, price: float) -> DiscordEmbed:
-    if trade[cexSup[cex]["type"]] == "sell":
-        color = 0x00FF00
+    if cex == "BINANCE":
+        if trade[cexSup[cex]["type"]] == True:
+            color = 0x00FF00
+        else:
+            color = 0xFF0000
+
     else:
-        color = 0xFF0000
+        if trade[cexSup[cex]["type"]] == "sell":
+            color = 0x00FF00
+        else:
+            color = 0xFF0000
     value = round((getSize(trade, cex) * price), 2)
     if value >= float(FTH_MINIMUM_SIZE):
         title = "❗❗❗❗❗❗🔔🔔🔔HUGE WHALE TRADE❗❗❗❗❗❗🔔🔔🔔"
